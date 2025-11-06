@@ -29,7 +29,7 @@ export function createCopyButton(content, tooltip = "Copier") {
 export function createFeedbackButton(onFeedback, tooltip = "Bon") {
   const btn = create("button", "btn btn-icon fs12 p-micro");
   btn.dataset.tooltip = tooltip;
-  btn.appendChild(SVG("thumbs-up", { size: 18 }));
+  btn.appendChild(SVG("thumb_up", { size: 18 }));
   btn.onclick = () => {
     alert(UI_TEXT.MESSAGES.FEEDBACK_POSITIVE);
     onFeedback?.("positive");
@@ -46,7 +46,7 @@ export function createFeedbackButton(onFeedback, tooltip = "Bon") {
 export function createNegativeFeedbackButton(onFeedback, tooltip = "À améliorer") {
   const btn = create("button", "btn btn-icon fs12 p-micro");
   btn.dataset.tooltip = tooltip;
-  btn.appendChild(SVG("thumbs-down", { size: 18 }));
+  btn.appendChild(SVG("thumb_down", { size: 18 }));
   btn.onclick = () => {
     alert(UI_TEXT.MESSAGES.FEEDBACK_NEGATIVE);
     onFeedback?.("negative");
