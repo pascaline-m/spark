@@ -19,7 +19,7 @@ export function attachModeDropdownHandlers() {
     selectedMode = target.dataset.mode;
     iaModeBtn.querySelector(".icon").textContent =
       selectedMode === "generique"
-        ? "🧠"
+        ? ""
         : selectedMode === "specialise"
         ? "✨"
         : "🤖";

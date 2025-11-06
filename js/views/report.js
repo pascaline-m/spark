@@ -119,7 +119,7 @@ function makeAdditionalCard(card, doc, isLastResponse = false, actions = null) {
 
     // Ne pas afficher le badge IA pour les réponses de correction
     if (card.type === "letter-response") {
-      let badgeLabel = card.letterRecipient === "patient" ? "🧠 IA Patient" : "🧠 IA Confrère";
+      let badgeLabel = card.letterRecipient === "patient" ? "IA Patient" : "IA Confrère";
       const badge = create("span", "badge-ia", badgeLabel);
       cardHeader.append(badge);
     }
@@ -222,9 +222,19 @@ function makeCrBlock(doc, idx) {
 
   // Header "titre + x" (barre cliquable pour open/close)
   const hCollapse = create("div", "cr-header");
+
+  // Groupe gauche : horodatage + titre
+  const headerLeft = create("div", "cr-header-left");
+  headerLeft.style.display = "flex";
+  headerLeft.style.alignItems = "center";
+  headerLeft.style.gap = "12px";
+
+  const timestamp = create("span", "fs12 muted", doc.time || nowTime());
   const titleBtn = create("button", "cr-title", titleForDoc(doc, idx));
   titleBtn.type = "button";
   titleBtn.onclick = () => toggleBlock(block, true);
+
+  headerLeft.append(timestamp, titleBtn);
 
   const headerRight = create("div", "cr-header-right");
   const chevronBtn = create("button", "cr-toggle fs16", "v");
@@ -239,7 +249,7 @@ function makeCrBlock(doc, idx) {
     deleteBlockByEl(block);
   };
   headerRight.append(chevronBtn, closeBtn);
-  hCollapse.append(titleBtn, headerRight);
+  hCollapse.append(headerLeft, headerRight);
 
   // Contenu (question / réponse)
   const content = create("div", "cr-content");
@@ -270,9 +280,9 @@ function makeCrBlock(doc, idx) {
   // Pour les courriers, afficher le badge selon le destinataire
   let badgeLabel;
   if (doc.docType === "courrier") {
-    badgeLabel = doc.letterRecipient === "patient" ? "🧠 IA Patient" : "🧠 IA Confrère";
+    badgeLabel = doc.letterRecipient === "patient" ? "IA Patient" : "IA Confrère";
   } else {
-    badgeLabel = doc.iaMode ? `🧠 ${doc.iaMode}` : "🧠 IA Spécialisé";
+    badgeLabel = doc.iaMode ? `${doc.iaMode}` : "IA Spécialisé";
   }
   const badge = create("span", "badge-ia", badgeLabel);
 
@@ -378,30 +388,11 @@ function makeCrBlock(doc, idx) {
   bLetter.style.padding = "2px 4px";
 
   bLetter.onclick = () => {
-    // Changer le dropdown Mode vers "Courrier"
-    const modeDropdown = document.querySelector(".dd.dd-mode .dd-display");
-    if (modeDropdown) {
-      modeDropdown.textContent = "Courrier";
-
-      // Masquer le dropdown IA et afficher le dropdown Lettre
-      const ddIA = document.querySelector(".dd.dd-ia");
-      const ddLetter = document.querySelector(".dd.dd-letter");
-      if (ddIA) ddIA.style.display = "none";
-      if (ddLetter) ddLetter.style.display = "flex";
-
-      // Changer le placeholder du textarea
-      const textarea = document.querySelector(".cr-textarea");
-      if (textarea) {
-        textarea.placeholder = "Rédiger un courrier a partir du Compte-rendu sélectionné";
-        textarea.focus();
-      }
-
-      // Stocker le document sélectionné pour référence
-      state.selectedCrForLetter = doc;
-
-      // Scroll vers le bas
-      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
+    state.letterMode = true;
+    state.letterInput = "";
+    state.activeLetterDocId = doc.id ?? idx;
+    state.letterRecipient = "confrere"; // défaut
+    window.render();
   };
 
   const bCopy = create("button", "btn btn-icon fs12");
@@ -514,7 +505,7 @@ export function renderReportTab() {
   wrap.append(list);
 
   /* ---- Panneau bas : textarea + dropdowns (à gauche) + mic/envoyer (à droite) ---- */
-  if (!state.correctionMode) {
+  if (!state.correctionMode && !state.letterMode) {
     const form = create("div", "cr-input-container dictation-panel p12");
     const inputRow = create("div", "cr-top-row mb8");
     const textarea = create("textarea", "cr-textarea");
@@ -632,8 +623,8 @@ export function renderReportTab() {
     actions.append(ddMode.root, ddIA.root, ddLetter.root, rightGroup);
     form.append(actions);
     wrap.append(form);
-  } else {
-    // Panneau correction uniquement
+  } else if (state.correctionMode) {
+    // Panneau correction
     const panel = create("div", "p12 correction-panel");
     const header = create("div", "correction-header mb12 fs20 w100");
     const title = create(
@@ -694,6 +685,89 @@ export function renderReportTab() {
       state.correctionMode = false;
       state.correctionInput = "";
       state.activeCorrectionDocId = null;
+      window.render();
+    };
+    btnGroup.append(mic, send);
+
+    row.append(textarea);
+    panel.append(row, btnGroup);
+    wrap.append(panel);
+  } else if (state.letterMode) {
+    // Panneau rédaction de courrier
+    const panel = create("div", "p12 correction-panel");
+    const header = create("div", "correction-header mb12 fs20 w100");
+    const title = create(
+      "label",
+      "fs14 bold",
+      "Rédiger un courrier"
+    );
+    const close = create("button", "btn-icon fs18 muted close", "×");
+    close.onclick = () => {
+      state.letterMode = false;
+      state.letterInput = "";
+      state.activeLetterDocId = null;
+      window.render();
+    };
+    header.append(title, close);
+    panel.append(header);
+
+    // Dropdown pour choisir le destinataire
+    const ddLetter = makeDropdown(
+      "Confrère",
+      ["Confrère", "Patient"],
+      (val) => {
+        state.letterRecipient = val.toLowerCase();
+      },
+      "dd-letter mb12"
+    );
+    panel.append(ddLetter.root);
+
+    const row = create("div", "cr-top-row mn8");
+    const textarea = create("textarea", " correction-textarea");
+    textarea.placeholder = "Ajoutez des instructions pour personnaliser le courrier...";
+    textarea.value = state.letterInput;
+    textarea.oninput = (e) => (state.letterInput = e.target.value);
+
+    const btnGroup = create("div", "correct-group");
+    const mic = create("button", "cr-btn mic-btn fs12");
+    mic.appendChild(SVG("mic"));
+    mic.dataset.tooltip = "Dicter";
+    mic.onclick = () => textarea.focus();
+
+    const send = create("button", "cr-btn send-btn fs12 p8");
+    send.appendChild(SVG("send", { size: 20, color: "white" }));
+    send.dataset.tooltip = "Envoyer";
+    send.onclick = () => {
+      const targetDoc = state.crHistory.find(
+        (d, i) => (d.id ?? i) === state.activeLetterDocId
+      );
+      if (!targetDoc) return;
+
+      // Initialiser cards si nécessaire
+      if (!Array.isArray(targetDoc.cards)) {
+        targetDoc.cards = [];
+      }
+
+      // Ajouter la demande de courrier
+      targetDoc.cards.push({
+        type: "letter-request",
+        content: state.letterInput || "Générer un courrier",
+        time: nowTime(),
+      });
+
+      // Ajouter la réponse courrier (simulée)
+      const recipient = state.letterRecipient || "confrere";
+      targetDoc.cards.push({
+        type: "letter-response",
+        content: `Cher ${recipient === "patient" ? "patient" : "confrère"},\n\nSuite au compte-rendu ci-dessus, je me permets de vous écrire.\n\n${state.letterInput}\n\nCordialement,`,
+        time: nowTime(),
+        letterRecipient: recipient,
+      });
+
+      // Fermer le panneau
+      state.letterMode = false;
+      state.letterInput = "";
+      state.activeLetterDocId = null;
       window.render();
     };
     btnGroup.append(mic, send);
