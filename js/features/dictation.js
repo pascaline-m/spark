@@ -35,9 +35,9 @@ export function renderDictatedContent(doc) {
           .split(/\s+/)
           .some((phraseWord) => wordLower.includes(phraseWord))
       );
-      
+
       return isDictated
-        ? '<span style="background-color: #CCFFCC;">' + escapeHtml(word) + '</span>'
+        ? '<span class="highlight-dictated">' + escapeHtml(word) + '</span>'
         : escapeHtml(word);
     })
     .join("");

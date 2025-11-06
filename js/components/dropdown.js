@@ -10,20 +10,16 @@ import { create } from "../utils/dom.js";
  * @returns {Object} Dropdown object with root element and methods
  */
 export function makeDropdown(defaultLabel, options, onSelect, extraClass = "") {
-  const root = create("div", `dd ${extraClass}`);
-  root.style.position = "relative";
-
+  const root = create("div", `dd relative ${extraClass}`);
   const display = create("div", "dd-display", defaultLabel);
   const menu = create("div", "menu-dropdown");
 
   options.forEach((opt) => {
     const item = create("div", "menu-item", opt);
-    item.onmouseenter = () => (item.style.background = "#f0f0f0");
-    item.onmouseleave = () => (item.style.background = "transparent");
     item.onclick = (e) => {
       e.stopPropagation();
       display.textContent = opt;
-      menu.style.display = "none";
+      menu.classList.add("d-none");
       onSelect?.(opt);
     };
     menu.append(item);
@@ -34,8 +30,8 @@ export function makeDropdown(defaultLabel, options, onSelect, extraClass = "") {
     // Close all other dropdowns
     document
       .querySelectorAll(".menu-dropdown")
-      .forEach((m) => (m.style.display = "none"));
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
+      .forEach((m) => m.classList.add("d-none"));
+    menu.classList.toggle("d-none");
   };
 
   root.append(display, menu);
@@ -46,8 +42,8 @@ export function makeDropdown(defaultLabel, options, onSelect, extraClass = "") {
     menu,
     setLabel: (s) => (display.textContent = s),
     getValue: () => display.textContent,
-    hide: () => (menu.style.display = "none"),
-    show: () => (menu.style.display = "block"),
+    hide: () => menu.classList.add("d-none"),
+    show: () => menu.classList.remove("d-none"),
   };
 }
 
@@ -64,6 +60,6 @@ export function initDropdownGlobalHandler() {
   document.addEventListener("click", () => {
     document
       .querySelectorAll(".menu-dropdown")
-      .forEach((m) => (m.style.display = "none"));
+      .forEach((m) => m.classList.add("d-none"));
   });
 }
