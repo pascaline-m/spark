@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spark Prototype</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="app container" id="app">
+    <!-- Header -->
+<div class="app-header">
+  <div class="app-header-left">
+    <h1 class="fs18 bold">Doctreen Spark</h1>
+    <div class="guide-link">
+      <a href="https://doctreen.com" target="_blank" rel="noopener noreferrer">Guide</a>
+    </div>
+  </div>
+
+  <button id="openSettings" class="btn-icon fs16" aria-label="Paramètres">⚙️</button>
+</div>
+
+
+    <!-- Main Vue -->
+    <div id="mainView">
+      <nav class="tabs" role="tablist">
+        <button data-tab="cr" class="tab active" role="tab" aria-selected="true">
+          Compte rendu
+        </button>
+
+        <button data-tab="voice" class="tab" role="tab" aria-selected="false">
+          Voice</button>
+      </nav>
+      <div id="tabContent" role="tabpanel"></div>
+    </div>
+    <!-- Settings -->
+    <div id="settingsView" class="hidden">
+      <div class="app-header">
+        <h1 class="fs18 bold">
+          Mes réglages</h1>
+        <button id="closeSettings" class="btn-icon muted fs16" aria-label="Fermer">×</button>
+      </div>
+      <nav class="tabs scrollable" role="tablist"> <button data-stab="preferences" class="tab active" role="tab"
+          aria-selected="true">
+          Préférences</button>
+        <button data-stab="devices" class="tab" role="tab" aria-selected="false">
+          Micro</button>
+        <button data-stab="dictation" class="tab" role="tab" aria-selected="false">
+          Voice</button>
+        <button data-stab="shortcuts" class="tab" role="tab" aria-selected="false">
+          Raccourcis</button>
+      </nav>
+      <div id="settingsContent" role="tabpanel"></div>
+    </div>
+  </div>
+  <script type="module" src="./js/index.js"></script>
+</body>
+
+</html>
