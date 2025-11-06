@@ -22,26 +22,34 @@ export function initEvents() {
   });
 
   // Initialize DOM-dependent event handlers
-  document.addEventListener("DOMContentLoaded", () => {
+  const initDOMHandlers = () => {
     const openSettings = document.getElementById("openSettings");
     const closeSettings = document.getElementById("closeSettings");
-    
+
     openSettings &&
       (openSettings.onclick = () => {
         state.showSettings = true;
         render();
       });
-    
+
     closeSettings &&
       (closeSettings.onclick = () => {
         state.showSettings = false;
         render();
       });
-    
+
     attachModeDropdownHandlers();
     initDropdownGlobalHandler();
     render();
-  });
+  };
+
+  // Check if DOM is already loaded (handles module defer behavior)
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDOMHandlers);
+  } else {
+    // DOM is already ready, execute immediately
+    initDOMHandlers();
+  }
 }
 
 // Export render for internal use
