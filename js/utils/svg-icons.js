@@ -24,25 +24,29 @@ const SVG_ICONS = {
   thumb_down: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22L1.14 11.27c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 22l6.58-6.59c.37-.36.59-.86.59-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>`,
 };
 
-const createIcon = (name, size = 24, classes = "") => {
-  if (!SVG_ICONS[name]) {
-    console.warn(`Icon "${name}" not found`);
-    return create("div", classes);
-  }
-
-  const wrapper = create("svg", `icon icon-${name} ${classes}`);
-  wrapper.setAttribute("viewBox", "0 0 24 24");
-  wrapper.setAttribute("width", size);
-  wrapper.setAttribute("height", size);
-  wrapper.innerHTML = SVG_ICONS[name];
-
-  return wrapper;
-};
-
-const SVG = (
+/**
+ * Creates an SVG icon element
+ * @param {string} name - Icon name from SVG_ICONS
+ * @param {Object} options - Icon options
+ * @param {number} options.size - Icon size in pixels (default: 24)
+ * @param {string} options.color - Icon color (default: "currentColor")
+ * @param {string} options.classes - Additional CSS classes
+ * @returns {SVGElement} The SVG element
+ */
+export const SVG = (
   name,
   { size = 24, color = "currentColor", classes = "" } = {}
 ) => {
+  if (!SVG_ICONS[name]) {
+    console.warn(`Icon "${name}" not found`);
+    // Return empty SVG element as fallback
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", size);
+    svg.setAttribute("height", size);
+    return svg;
+  }
+
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
   svg.setAttribute("width", size);
@@ -58,5 +62,3 @@ const SVG = (
   svg.innerHTML = SVG_ICONS[name] || "";
   return svg;
 };
-
-export { SVG, createIcon };
