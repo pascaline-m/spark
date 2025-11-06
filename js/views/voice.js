@@ -53,19 +53,20 @@ export function renderVoiceDictTab() {
   const textexemple = create("textarea", "fs14");
   textexemple.id = "ristextarea";
   textexemple.placeholder = "RIS - Résultats";
-  const floatingMic = create("div", "floating-mic");
+  const floatingMic = create("div", "floating-mic d-none");
   floatingMic.appendChild(SVG("mic", { size: 24 }));
   floatingMic.id = "floatingMic";
-  floatingMic.style.display = "none";
   textexempleSection.append(textexempleLabel, textexemple, floatingMic);
   w.appendChild(textexempleSection);
   textexemple.addEventListener("focus", () => {
-    floatingMic.style.display = "block";
+    floatingMic.classList.remove("d-none");
+    floatingMic.classList.add("d-block");
   });
 
   textexemple.addEventListener("blur", () => {
     if (state !== "active") {
-      floatingMic.style.display = "none";
+      floatingMic.classList.add("d-none");
+      floatingMic.classList.remove("d-block");
     }
   });
 
@@ -98,9 +99,10 @@ export function renderVoiceDictTab() {
       microIcn.textContent = "";
       microIcn.appendChild(waveContainer);
       infoC.classList.add("active");
-      dictationTextElement.style.display = "block";
-      floatingMic.style.display = "block";
-      floatingMic.classList.add("visible");
+      dictationTextElement.classList.remove("d-none");
+      dictationTextElement.classList.add("d-block");
+      floatingMic.classList.remove("d-none");
+      floatingMic.classList.add("d-block", "visible");
     } else if (state === "processing") {
       statusTxt.textContent = "⟳ Traitement en cours...";
     } else if (state === "success") {
@@ -110,8 +112,10 @@ export function renderVoiceDictTab() {
       microIcn.textContent = "✓";
       infoC.classList.add("success");
       if (textexemple) textexemple.value = currentDictation.trim();
-      dictationTextElement.style.display = "none";
-      floatingMic.style.display = "none";
+      dictationTextElement.classList.add("d-none");
+      dictationTextElement.classList.remove("d-block");
+      floatingMic.classList.add("d-none");
+      floatingMic.classList.remove("d-block");
 
       setTimeout(() => {
         state = "inactive";
@@ -124,7 +128,8 @@ export function renderVoiceDictTab() {
       microIcn.innerHTML = "";
       microIcn.appendChild(SVG("mic", { size: 48 }));
       infoC.classList.remove("active", "success", "error");
-      dictationTextElement.style.display = "none";
+      dictationTextElement.classList.add("d-none");
+      dictationTextElement.classList.remove("d-block");
     }
   };
 

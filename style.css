@@ -125,6 +125,10 @@ body {
   margin-top: var(--spacing-lg);
 }
 
+.mt20 {
+  margin-top: 20px;
+}
+
 .p8 {
   padding: var(--spacing-md);
 }
@@ -135,6 +139,14 @@ body {
 
 .p16 {
   padding: var(--spacing-xl);
+}
+
+.pt16 {
+  padding-top: var(--spacing-xl);
+}
+
+.p-micro {
+  padding: 2px 4px;
 }
 
 .w100 {
@@ -176,8 +188,67 @@ body {
   display: none;
 }
 
+.d-none {
+  display: none;
+}
+
+.d-block {
+  display: block;
+}
+
+.d-flex {
+  display: flex;
+}
+
 .scrollable {
   overflow-x: auto;
+}
+
+/* Flexbox utilities */
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-align-center {
+  display: flex;
+  align-items: center;
+}
+
+.gap-4 {
+  gap: 4px;
+}
+
+.gap-6 {
+  gap: 6px;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.gap-12 {
+  gap: 12px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+/* Positioning */
+.relative {
+  position: relative;
 }
 
 /* App Structure */
@@ -388,6 +459,90 @@ textarea.input {
 .card-strong {
   border: 1px solid var(--border-strong);
   background: var(--bg);
+}
+
+/* Background utilities */
+.bg-soft {
+  background: var(--bg-soft);
+}
+
+.bg-light {
+  background: var(--bg-light);
+}
+
+.bg-light-blue {
+  background: var(--bg-light-blue);
+}
+
+.bg-info {
+  background: #e9f4f7;
+}
+
+/* Border utilities */
+.border-top {
+  border-top: 2px solid var(--border);
+}
+
+.border-soft {
+  border: 1px solid var(--border);
+}
+
+.border-radius {
+  border-radius: var(--radius);
+}
+
+.border-radius-sm {
+  border-radius: 3px;
+}
+
+/* Min-height utilities */
+.min-h-120 {
+  min-height: 120px;
+}
+
+.min-h-80 {
+  min-height: 80px;
+}
+
+/* Settings specific utilities */
+.settings-label {
+  display: block;
+}
+
+.settings-checkbox-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.settings-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.settings-checkbox-label {
+  cursor: pointer;
+  flex: 1;
+}
+
+.settings-info-box {
+  background: var(--bg-soft);
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+.settings-note {
+  border-left: 2px solid #0f5f7f;
+  background: var(--bg-soft);
+  padding: 8px;
+  border-radius: 2px;
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 /* Voice Component */
@@ -1192,5 +1347,9 @@ mark {
   background-color: #fff59d;
   border-radius: 2px;
   padding: 0 2px;
+}
+
+.highlight-dictated {
+  background-color: #CCFFCC;
 }
 

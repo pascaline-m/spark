@@ -7,12 +7,11 @@ export function attachModeDropdownHandlers() {
   const iaModeBtn = document.getElementById("ia-mode-btn");
   const iaDropdown = document.getElementById("ia-dropdown");
   let selectedMode = "generique";
-  
+
   iaModeBtn?.addEventListener("click", () => {
-    iaDropdown.style.display =
-      iaDropdown.style.display === "block" ? "none" : "block";
+    iaDropdown.classList.toggle("d-none");
   });
-  
+
   iaDropdown?.addEventListener("click", (e) => {
     const target = e.target.closest("div[data-mode]");
     if (!target) return;
@@ -23,7 +22,7 @@ export function attachModeDropdownHandlers() {
         : selectedMode === "specialise"
         ? "✨"
         : "🤖";
-    iaDropdown.style.display = "none";
+    iaDropdown.classList.add("d-none");
   });
 }
 

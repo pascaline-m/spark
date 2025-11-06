@@ -3,50 +3,16 @@ import { create } from "../utils/dom.js";
 import { state } from "../state/state.js";
 import { nowTime } from "../utils/time.js";
 import { SVG } from "../utils/svg-icons.js";
+import { makeDropdown, initDropdownGlobalHandler } from "../components/dropdown.js";
+import {
+  createCopyButton,
+  createFeedbackButton,
+  createNegativeFeedbackButton,
+  createIconButton
+} from "../utils/button-helpers.js";
 
-/* ------------------------------------------------------------------
-   Dropdown générique (conserve ton API + fermeture au clic extérieur)
-------------------------------------------------------------------- */
-function makeDropdown(defaultLabel, options, onSelect, extraClass = "") {
-  const root = create("div", `dd ${extraClass}`);
-  root.style.position = "relative";
-
-  const display = create("div", "dd-display", defaultLabel);
-  const menu = create("div", "menu-dropdown");
-
-  options.forEach((opt) => {
-    const item = create("div", "menu-item", opt);
-    item.onmouseenter = () => (item.style.background = "#f0f0f0");
-    item.onmouseleave = () => (item.style.background = "transparent");
-    item.onclick = (e) => {
-      e.stopPropagation();
-      display.textContent = opt;
-      menu.style.display = "none";
-      onSelect?.(opt);
-    };
-    menu.append(item);
-  });
-
-  display.onclick = (e) => {
-    e.stopPropagation();
-    document
-      .querySelectorAll(".menu-dropdown")
-      .forEach((m) => (m.style.display = "none"));
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-  };
-
-  root.append(display, menu);
-  return { root, display, menu, setLabel: (s) => (display.textContent = s) };
-}
-
-if (!window.__crDropdownOutsideCloseInstalled) {
-  window.__crDropdownOutsideCloseInstalled = true;
-  document.addEventListener("click", () => {
-    document
-      .querySelectorAll(".menu-dropdown")
-      .forEach((m) => (m.style.display = "none"));
-  });
-}
+// Initialize global dropdown handler once
+initDropdownGlobalHandler();
 
 /* ------------------------------------------------------------------
    Utils multi‑blocs
@@ -94,9 +60,7 @@ function titleForDoc(doc, idx) {
    Rendu d'une carte additionnelle (correction ou courrier)
 ------------------------------------------------------------------- */
 function makeAdditionalCard(card, doc, isLastResponse = false, actions = null) {
-  const cardContainer = create("div", "cr-card mt16");
-  cardContainer.style.borderTop = "2px solid #e0e0e0";
-  cardContainer.style.paddingTop = "16px";
+  const cardContainer = create("div", "cr-card mt16 border-top pt16");
 
   // Label de la carte
   const cardLabel = create("div", "cr-section-label mb8", "");
@@ -147,37 +111,10 @@ function makeAdditionalCard(card, doc, isLastResponse = false, actions = null) {
         window.render();
       };
 
-      const spacer = create("div");
-      spacer.style.flex = "1";
-
-      const bCopy = create("button", "btn btn-icon fs12");
-      bCopy.dataset.tooltip = "Copier";
-      bCopy.appendChild(SVG("copy", { size: 18 }));
-      bCopy.style.padding = "2px 4px";
-      bCopy.onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(card.content);
-          alert("✓ Copié !");
-        } catch {
-          alert("Impossible de copier");
-        }
-      };
-
-      const bUp = create("button", "btn btn-icon fs12");
-      bUp.dataset.tooltip = "Satisfaisant";
-      bUp.appendChild(SVG("thumb_up", { size: 18 }));
-      bUp.style.padding = "2px 4px";
-      bUp.onclick = () => {
-        alert("Merci pour votre retour!");
-      };
-
-      const bDown = create("button", "btn btn-icon fs12");
-      bDown.dataset.tooltip = "Insatisfaisant";
-      bDown.appendChild(SVG("thumb_down", { size: 18 }));
-      bDown.style.padding = "2px 4px";
-      bDown.onclick = () => {
-        alert("Retour pris en compte!");
-      };
+      const spacer = create("div", "flex-1");
+      const bCopy = createCopyButton(card.content, "Copier");
+      const bUp = createFeedbackButton(null, "Satisfaisant");
+      const bDown = createNegativeFeedbackButton(null, "Insatisfaisant");
 
       letterRow.append(bCorr, spacer, bCopy, bUp, bDown);
       letterActions.append(letterRow);
@@ -191,18 +128,14 @@ function makeAdditionalCard(card, doc, isLastResponse = false, actions = null) {
   } else {
     // Appliquer le même background pour les demandes de correction et de courrier
     if (card.type === "correction-request" || card.type === "letter-request") {
-      cardContent.style.background = "#e9f4f7";
+      cardContent.classList.add("bg-info");
     }
 
     // Pour les cartes de demande (request), ajouter l'horodatage à droite du label
     if (card.type === "correction-request" || card.type === "letter-request") {
-      const labelRow = create("div", "mb8");
-      labelRow.style.display = "flex";
-      labelRow.style.justifyContent = "space-between";
-      labelRow.style.alignItems = "center";
-
+      const labelRow = create("div", "flex-between mb8");
       const timestamp = create("span", "fs12 muted", card.time || nowTime());
-      cardLabel.style.marginBottom = "0";
+      cardLabel.classList.remove("mb8");
       labelRow.append(cardLabel, timestamp);
       cardContainer.append(labelRow, cardContent);
     } else {
@@ -224,11 +157,7 @@ function makeCrBlock(doc, idx) {
   const hCollapse = create("div", "cr-header");
 
   // Groupe gauche : horodatage + titre
-  const headerLeft = create("div", "cr-header-left");
-  headerLeft.style.display = "flex";
-  headerLeft.style.alignItems = "center";
-  headerLeft.style.gap = "12px";
-
+  const headerLeft = create("div", "cr-header-left flex-align-center gap-12");
   const timestamp = create("span", "fs12 muted", doc.time || nowTime());
   const titleBtn = create("button", "cr-title", titleForDoc(doc, idx));
   titleBtn.type = "button";
@@ -255,14 +184,8 @@ function makeCrBlock(doc, idx) {
   const content = create("div", "cr-content");
 
   // Label de la question avec horodatage à droite
-  const qLabelRow = create("div", "mb8");
-  qLabelRow.style.display = "flex";
-  qLabelRow.style.justifyContent = "space-between";
-  qLabelRow.style.alignItems = "center";
-
+  const qLabelRow = create("div", "flex-between mb8");
   const qLabel = create("div", "cr-section-label", "");
-  qLabel.style.marginBottom = "0";
-
   const qTimestamp = create("span", "fs12 muted", doc.time || nowTime());
   qLabelRow.append(qLabel, qTimestamp);
 
@@ -321,7 +244,6 @@ function makeCrBlock(doc, idx) {
   }
 
   // Actions sous la réponse (Corriger, Cohérence, Copier, 👍, 👎)
-
   const actions = create("div", "doc-actions mt12");
   const row = create("div", "btn-row");
   const bCorr = create("button", "btn btn-corriger fs12");
@@ -334,15 +256,9 @@ function makeCrBlock(doc, idx) {
     window.render();
   };
 
-  const spacer = create("div");
-  spacer.style.flex = "1";
+  const spacer = create("div", "flex-1");
 
-  const bCoherence = create("button", "btn btn-icon fs12");
-  bCoherence.dataset.tooltip = "Cohérence";
-  bCoherence.appendChild(SVG("check", { size: 18 }));
-  bCoherence.style.padding = "2px 4px";
-
-  bCoherence.onclick = () => {
+  const bCoherence = createIconButton("check", () => {
     const active = bCoherence.classList.toggle("active-coherence");
     bCoherence.dataset.tooltip = active ? "Cohérence activée" : "Cohérence";
 
@@ -352,7 +268,7 @@ function makeCrBlock(doc, idx) {
       const textWrapper = document.createElement("div");
       textWrapper.className = "answer-text";
       textWrapper.innerHTML = doc.content;
-      // on transfère le texte existant s’il n’est pas encore encapsulé
+      // on transfère le texte existant s'il n'est pas encore encapsulé
       const oldText = answer.firstChild;
       if (oldText && !oldText.classList?.contains("answer-text")) {
         answer.insertBefore(textWrapper, oldText);
@@ -379,50 +295,20 @@ function makeCrBlock(doc, idx) {
       });
       textEl.innerHTML = html;
     }
-  };
+  }, "Cohérence", 18);
 
-  const bLetter = create("button", "btn btn-icon fs12 letter-btn");
-  bLetter.dataset.tooltip = "Rédiger un courrier";
-  const letterIcon = SVG("envelope", { size: 18 });
-  bLetter.appendChild(letterIcon);
-  bLetter.style.padding = "2px 4px";
-
-  bLetter.onclick = () => {
+  const bLetter = createIconButton("envelope", () => {
     state.letterMode = true;
     state.letterInput = "";
     state.activeLetterDocId = doc.id ?? idx;
     state.letterRecipient = "confrere"; // défaut
     window.render();
-  };
+  }, "Rédiger un courrier", 18);
+  bLetter.classList.add("letter-btn");
 
-  const bCopy = create("button", "btn btn-icon fs12");
-  bCopy.dataset.tooltip = "Copier";
-  bCopy.appendChild(SVG("copy", { size: 18 }));
-  bCopy.style.padding = "2px 4px";
-  bCopy.onclick = async () => {
-    try {
-      await navigator.clipboard.writeText(doc.content);
-      alert("✓ Copié !");
-    } catch {
-      alert("Impossible de copier");
-    }
-  };
-
-  const bUp = create("button", "btn btn-icon fs12");
-  bUp.dataset.tooltip = "Satisfaisant";
-  bUp.appendChild(SVG("thumb_up", { size: 18 }));
-  bUp.style.padding = "2px 4px";
-  bUp.onclick = () => {
-    alert("Merci pour votre retour!");
-  };
-
-  const bDown = create("button", "btn btn-icon fs12");
-  bDown.dataset.tooltip = "Insatisfaisant";
-  bDown.appendChild(SVG("thumb_down", { size: 18 }));
-  bDown.style.padding = "2px 4px";
-  bDown.onclick = () => {
-    alert("Retour pris en compte!");
-  };
+  const bCopy = createCopyButton(doc.content, "Copier");
+  const bUp = createFeedbackButton(null, "Satisfaisant");
+  const bDown = createNegativeFeedbackButton(null, "Insatisfaisant");
 
   // Ne pas afficher le bouton "Rédiger un courrier" si c'est déjà un courrier
   if (doc.docType === "courrier") {
@@ -528,13 +414,17 @@ export function renderReportTab() {
       (val) => {
         const letterBtn = document.querySelector(".letter-btn");
         if (val === "Compte-rendu") {
-          ddIA.root.style.display = "flex";
-          ddLetter.root.style.display = "none";
+          ddIA.root.classList.remove("d-none");
+          ddIA.root.classList.add("d-flex");
+          ddLetter.root.classList.add("d-none");
+          ddLetter.root.classList.remove("d-flex");
           textarea.placeholder = "Dictez vos observations...";
           if (letterBtn) letterBtn.classList.remove("active-letter");
         } else {
-          ddIA.root.style.display = "none";
-          ddLetter.root.style.display = "flex";
+          ddIA.root.classList.add("d-none");
+          ddIA.root.classList.remove("d-flex");
+          ddLetter.root.classList.remove("d-none");
+          ddLetter.root.classList.add("d-flex");
           textarea.placeholder = "Rédiger un courrier a partir du Compte-rendu sélectionné";
         }
       },
@@ -559,9 +449,8 @@ export function renderReportTab() {
       (val) => {
         state.letterAudience = val.toLowerCase();
       },
-      "dd-letter"
+      "dd-letter d-none"
     );
-    ddLetter.root.style.display = "none";
 
     const rightGroup = create("div", "cr-right-group");
     const micBtn = create("button", "cr-btn mic-btn fs12 p8");
