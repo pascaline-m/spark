@@ -5,6 +5,7 @@ export const state = {
   activeTab: "cr",
   verifyMode: false,
   correctionMode: false,
+  letterMode: false,
   voiceDictStatus: "idle",
   showSettings: false,
   settingsTab: "preferences",
@@ -58,4 +59,5 @@ Rupture complète du LCA avec instabilité.`,
   selectedCrForLetter: null,
   // Pour savoir quel document reçoit une correction/courrier
   activeCorrectionDocId: null,
+  activeLetterDocId: null,
 };
