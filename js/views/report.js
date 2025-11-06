@@ -103,7 +103,7 @@ function makeAdditionalCard(card, doc, isLastCorrectionResponse = false, actions
   if (card.type === "correction-request") {
     cardLabel.textContent = "Demande de correction";
   } else if (card.type === "correction-response") {
-    cardLabel.textContent = "Compte-rendu corrigé";
+    cardLabel.textContent = "Version corrigée";
   } else if (card.type === "letter-request") {
     cardLabel.textContent = "Demande de courrier";
   } else if (card.type === "letter-response") {
@@ -132,16 +132,82 @@ function makeAdditionalCard(card, doc, isLastCorrectionResponse = false, actions
 
     cardContainer.append(cardLabel, cardHeader, cardContent);
 
+    // Actions pour courrier généré (letter-response)
+    if (card.type === "letter-response") {
+      const letterActions = create("div", "doc-actions mt12");
+      const letterRow = create("div", "btn-row");
+
+      const bCorr = create("button", "btn btn-corriger fs12");
+      bCorr.dataset.tooltip = "Corriger le courrier";
+      bCorr.append(SVG("edit", { size: 18 }), create("span", "", " Corriger"));
+      bCorr.onclick = () => {
+        state.correctionMode = true;
+        state.correctionInput = "";
+        state.activeCorrectionDocId = doc.id;
+        window.render();
+      };
+
+      const spacer = create("div");
+      spacer.style.flex = "1";
+
+      const bCopy = create("button", "btn btn-icon fs12");
+      bCopy.dataset.tooltip = "Copier";
+      bCopy.appendChild(SVG("copy", { size: 18 }));
+      bCopy.style.padding = "2px 4px";
+      bCopy.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(card.content);
+          alert("✓ Copié !");
+        } catch {
+          alert("Impossible de copier");
+        }
+      };
+
+      const bUp = create("button", "btn btn-icon fs12");
+      bUp.dataset.tooltip = "Satisfaisant";
+      bUp.appendChild(SVG("thumb_up", { size: 18 }));
+      bUp.style.padding = "2px 4px";
+      bUp.onclick = () => {
+        alert("Merci pour votre retour!");
+      };
+
+      const bDown = create("button", "btn btn-icon fs12");
+      bDown.dataset.tooltip = "Insatisfaisant";
+      bDown.appendChild(SVG("thumb_down", { size: 18 }));
+      bDown.style.padding = "2px 4px";
+      bDown.onclick = () => {
+        alert("Retour pris en compte!");
+      };
+
+      letterRow.append(bCorr, spacer, bCopy, bUp, bDown);
+      letterActions.append(letterRow);
+      cardContent.append(letterActions);
+    }
+
     // Si c'est la dernière réponse de correction, ajouter les actions
     if (isLastCorrectionResponse && actions) {
       cardContent.append(actions);
     }
   } else {
-    // Appliquer le même background que la question initiale pour les demandes de correction
-    if (card.type === "correction-request") {
+    // Appliquer le même background pour les demandes de correction et de courrier
+    if (card.type === "correction-request" || card.type === "letter-request") {
       cardContent.style.background = "#e9f4f7";
     }
-    cardContainer.append(cardLabel, cardContent);
+
+    // Pour les cartes de demande (request), ajouter l'horodatage à droite du label
+    if (card.type === "correction-request" || card.type === "letter-request") {
+      const labelRow = create("div", "mb8");
+      labelRow.style.display = "flex";
+      labelRow.style.justifyContent = "space-between";
+      labelRow.style.alignItems = "center";
+
+      const timestamp = create("span", "fs12 muted", card.time || nowTime());
+      cardLabel.style.marginBottom = "0";
+      labelRow.append(cardLabel, timestamp);
+      cardContainer.append(labelRow, cardContent);
+    } else {
+      cardContainer.append(cardLabel, cardContent);
+    }
   }
 
   return cardContainer;
@@ -401,16 +467,20 @@ export function renderReportTab() {
   );
 
   const controls = create("div", "history-controls");
-  const deleteAll = create("button", "delete-btn fs12");
-  deleteAll.dataset.tooltip = "Effacer";
-  deleteAll.appendChild(SVG("delete", { size: 18 }));
-  deleteAll.onclick = () => {
-    state.crHistory = []; // supprime tout, sans recréer quoi que ce soit
-    window.render();
-  };
+
+  // Afficher la corbeille uniquement s'il y a au moins un CR ou Courrier
+  if (state.crHistory.length > 0) {
+    const deleteAll = create("button", "delete-btn fs12");
+    deleteAll.dataset.tooltip = "Effacer";
+    deleteAll.appendChild(SVG("delete", { size: 18 }));
+    deleteAll.onclick = () => {
+      state.crHistory = []; // supprime tout, sans recréer quoi que ce soit
+      window.render();
+    };
+    controls.append(deleteAll);
+  }
 
   list.append(info, controls);
-  controls.append(deleteAll);
   wrap.append(list);
 
   /* ---- Panneau bas : textarea + dropdowns (à gauche) + mic/envoyer (à droite) ---- */
@@ -429,7 +499,7 @@ export function renderReportTab() {
     inputRow.append(textarea);
     form.append(inputRow);
 
-    // Barre d’actions bas : dropdowns à gauche, mic + envoyer à droite
+    // Barre d'actions bas : dropdowns à gauche, mic + envoyer à droite
     const actions = create("div", "cr-actions w100");
     const ddMode = makeDropdown(
       "Compte-rendu",
@@ -439,10 +509,12 @@ export function renderReportTab() {
         if (val === "Compte-rendu") {
           ddIA.root.style.display = "flex";
           ddLetter.root.style.display = "none";
+          textarea.placeholder = "Dictez vos observations...";
           if (letterBtn) letterBtn.classList.remove("active-letter");
         } else {
           ddIA.root.style.display = "none";
           ddLetter.root.style.display = "flex";
+          textarea.placeholder = "Rédiger un courrier a partir du Compte-rendu sélectionné";
         }
       },
       "dd-mode"
