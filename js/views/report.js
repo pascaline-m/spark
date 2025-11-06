@@ -93,7 +93,7 @@ function titleForDoc(doc, idx) {
 /* ------------------------------------------------------------------
    Rendu d'une carte additionnelle (correction ou courrier)
 ------------------------------------------------------------------- */
-function makeAdditionalCard(card, doc) {
+function makeAdditionalCard(card, doc, isLastCorrectionResponse = false, actions = null) {
   const cardContainer = create("div", "cr-card mt16");
   cardContainer.style.borderTop = "2px solid #e0e0e0";
   cardContainer.style.paddingTop = "16px";
@@ -117,22 +117,30 @@ function makeAdditionalCard(card, doc) {
   if (card.type === "correction-response" || card.type === "letter-response") {
     const cardHeader = create("div", "doc-header mb8", "");
 
-    let badgeLabel;
+    // Ne pas afficher le badge IA pour les réponses de correction
     if (card.type === "letter-response") {
-      badgeLabel = card.letterRecipient === "patient" ? "🧠 IA Patient" : "🧠 IA Confrère";
-    } else {
-      badgeLabel = doc.iaMode ? `🧠 ${doc.iaMode}` : "🧠 IA Spécialisé";
+      let badgeLabel = card.letterRecipient === "patient" ? "🧠 IA Patient" : "🧠 IA Confrère";
+      const badge = create("span", "badge-ia", badgeLabel);
+      cardHeader.append(badge);
     }
-    const badge = create("span", "badge-ia", badgeLabel);
 
     const rightGroup = create("div", "header-right");
     const timeSpan = create("span", " muted fs12", "(3s)");
     const hour = create("span", "btn-icon fs12", `${card.time || nowTime()}`);
     rightGroup.append(timeSpan, hour);
-    cardHeader.append(badge, rightGroup);
+    cardHeader.append(rightGroup);
 
     cardContainer.append(cardLabel, cardHeader, cardContent);
+
+    // Si c'est la dernière réponse de correction, ajouter les actions
+    if (isLastCorrectionResponse && actions) {
+      cardContent.append(actions);
+    }
   } else {
+    // Appliquer le même background que la question initiale pour les demandes de correction
+    if (card.type === "correction-request") {
+      cardContent.style.background = "#e9f4f7";
+    }
     cardContainer.append(cardLabel, cardContent);
   }
 
@@ -329,16 +337,36 @@ function makeCrBlock(doc, idx) {
     alert("Retour pris en compte!");
   };
 
-  row.append(bCorr, spacer, bCoherence, bLetter, bCopy, bUp, bDown);
+  // Ne pas afficher le bouton "Rédiger un courrier" si c'est déjà un courrier
+  if (doc.docType === "courrier") {
+    row.append(bCorr, spacer, bCoherence, bCopy, bUp, bDown);
+  } else {
+    row.append(bCorr, spacer, bCoherence, bLetter, bCopy, bUp, bDown);
+  }
   actions.append(row);
-  answer.append(actions);
+
+  // Si des cartes de correction existent, ne pas ajouter les actions ici
+  const hasCorrectionResponse = Array.isArray(doc.cards) && doc.cards.some(card => card.type === "correction-response");
+  if (!hasCorrectionResponse) {
+    answer.append(actions);
+  }
 
   content.append(qLabel, question, header, aLabel, answer);
 
   // Ajouter les cartes additionnelles (corrections, courriers) si elles existent
   if (Array.isArray(doc.cards) && doc.cards.length > 0) {
-    doc.cards.forEach((card) => {
-      const cardEl = makeAdditionalCard(card, doc);
+    // Trouver l'index de la dernière carte correction-response
+    let lastCorrectionResponseIndex = -1;
+    for (let i = doc.cards.length - 1; i >= 0; i--) {
+      if (doc.cards[i].type === "correction-response") {
+        lastCorrectionResponseIndex = i;
+        break;
+      }
+    }
+
+    doc.cards.forEach((card, index) => {
+      const isLastCorrectionResponse = index === lastCorrectionResponseIndex && lastCorrectionResponseIndex !== -1;
+      const cardEl = makeAdditionalCard(card, doc, isLastCorrectionResponse, isLastCorrectionResponse ? actions : null);
       content.append(cardEl);
     });
   }
@@ -373,13 +401,6 @@ export function renderReportTab() {
   );
 
   const controls = create("div", "history-controls");
-  const openAll = create("button", "reopen-btn fs12", "Ouvrir historique");
-  openAll.onclick = () => {
-    document
-      .querySelectorAll(".cr-block.collapsed")
-      .forEach((b) => b.classList.remove("collapsed"));
-  };
-
   const deleteAll = create("button", "delete-btn fs12");
   deleteAll.dataset.tooltip = "Effacer";
   deleteAll.appendChild(SVG("delete", { size: 18 }));
@@ -389,7 +410,7 @@ export function renderReportTab() {
   };
 
   list.append(info, controls);
-  controls.append(openAll, deleteAll);
+  controls.append(deleteAll);
   wrap.append(list);
 
   /* ---- Panneau bas : textarea + dropdowns (à gauche) + mic/envoyer (à droite) ---- */
