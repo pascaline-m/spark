@@ -377,6 +377,26 @@ body {
   opacity: 1;
 }
 
+.btn-feedback-positive svg {
+  color: #4caf50;
+  fill: #4caf50;
+}
+
+.btn-feedback-positive:hover svg {
+  color: #45a049;
+  fill: #45a049;
+}
+
+.btn-feedback-negative svg {
+  color: #f44336;
+  fill: #f44336;
+}
+
+.btn-feedback-negative:hover svg {
+  color: #da190b;
+  fill: #da190b;
+}
+
 .cr-btn {
   width: 30px;
   height: 30px;
@@ -803,6 +823,12 @@ margin: 8px 0 6px 0;
 }
 
 /* DROPDOWN COMPONENTS */
+.dd {
+  display: inline-flex;
+  flex-direction: column;
+  position: relative;
+}
+
 .cr-type-select,
 .ia-mode-container,
 .letter-type-select {
@@ -835,7 +861,7 @@ margin: 8px 0 6px 0;
 }
 
 .dd-display {
-  background:var(--bg);
+  background: #e9f4f7;
   color: #000;
   border: 1px solid #ddd;
   border-radius: 8px;

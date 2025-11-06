@@ -27,7 +27,7 @@ export function createCopyButton(content, tooltip = "Copier") {
  * @returns {HTMLElement} Button element
  */
 export function createFeedbackButton(onFeedback, tooltip = "Bon") {
-  const btn = create("button", "btn btn-icon fs12 p-micro");
+  const btn = create("button", "btn btn-icon btn-feedback-positive fs12 p-micro");
   btn.dataset.tooltip = tooltip;
   btn.appendChild(SVG("thumbs-up", { size: 18 }));
   btn.onclick = () => {
@@ -44,7 +44,7 @@ export function createFeedbackButton(onFeedback, tooltip = "Bon") {
  * @returns {HTMLElement} Button element
  */
 export function createNegativeFeedbackButton(onFeedback, tooltip = "À améliorer") {
-  const btn = create("button", "btn btn-icon fs12 p-micro");
+  const btn = create("button", "btn btn-icon btn-feedback-negative fs12 p-micro");
   btn.dataset.tooltip = tooltip;
   btn.appendChild(SVG("thumbs-down", { size: 18 }));
   btn.onclick = () => {
