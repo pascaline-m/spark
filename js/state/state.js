@@ -17,11 +17,12 @@ export const state = {
     {
       id: 0,
       version: 1,
+      docType: "compte-rendu", // "compte-rendu" or "courrier"
       // --- Dictée initiale ---
-      question: `L'examen IRM montre une rupture complète du ligament croisé antérieur gauche, 
-avec une discontinuité des fibres ligamentaires et un œdème significatif. 
-Un volumineux hématome intra-articulaire est observé, particulièrement marqué 
-dans le récessus supra-patellaire, associé à un œdème osseux au niveau du condyle fémoral latéral. 
+      question: `L'examen IRM montre une rupture complète du ligament croisé antérieur gauche,
+avec une discontinuité des fibres ligamentaires et un œdème significatif.
+Un volumineux hématome intra-articulaire est observé, particulièrement marqué
+dans le récessus supra-patellaire, associé à un œdème osseux au niveau du condyle fémoral latéral.
 Tout le reste est normal.`,
 
       // --- Compte rendu final ---
@@ -49,8 +50,12 @@ Rupture complète du LCA avec instabilité.`,
       time: nowTime(),
       type: "response",
       isExample: true,
+      // Nouveau système de cartes multiples
+      cards: [],
     },
   ],
   letterHistory: [],
   selectedCrForLetter: null,
+  // Pour savoir quel document reçoit une correction/courrier
+  activeCorrectionDocId: null,
 };
