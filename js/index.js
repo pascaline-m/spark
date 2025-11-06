@@ -2,6 +2,9 @@
 import { initEvents } from "./events/init.js";
 import { render } from "./views/root.js";
 
+// Expose render globally for button handlers
+window.render = render;
+
 initEvents();
 
 export { render };
