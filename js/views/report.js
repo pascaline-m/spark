@@ -93,7 +93,7 @@ function titleForDoc(doc, idx) {
 /* ------------------------------------------------------------------
    Rendu d'une carte additionnelle (correction ou courrier)
 ------------------------------------------------------------------- */
-function makeAdditionalCard(card, doc, isLastCorrectionResponse = false, actions = null) {
+function makeAdditionalCard(card, doc, isLastResponse = false, actions = null) {
   const cardContainer = create("div", "cr-card mt16");
   cardContainer.style.borderTop = "2px solid #e0e0e0";
   cardContainer.style.paddingTop = "16px";
@@ -132,8 +132,8 @@ function makeAdditionalCard(card, doc, isLastCorrectionResponse = false, actions
 
     cardContainer.append(cardLabel, cardHeader, cardContent);
 
-    // Actions pour courrier généré (letter-response)
-    if (card.type === "letter-response") {
+    // Actions pour courrier généré (letter-response) - seulement si c'est la dernière réponse
+    if (card.type === "letter-response" && isLastResponse) {
       const letterActions = create("div", "doc-actions mt12");
       const letterRow = create("div", "btn-row");
 
@@ -185,7 +185,7 @@ function makeAdditionalCard(card, doc, isLastCorrectionResponse = false, actions
     }
 
     // Si c'est la dernière réponse de correction, ajouter les actions
-    if (isLastCorrectionResponse && actions) {
+    if (isLastResponse && card.type === "correction-response" && actions) {
       cardContent.append(actions);
     }
   } else {
@@ -243,7 +243,19 @@ function makeCrBlock(doc, idx) {
 
   // Contenu (question / réponse)
   const content = create("div", "cr-content");
+
+  // Label de la question avec horodatage à droite
+  const qLabelRow = create("div", "mb8");
+  qLabelRow.style.display = "flex";
+  qLabelRow.style.justifyContent = "space-between";
+  qLabelRow.style.alignItems = "center";
+
   const qLabel = create("div", "cr-section-label", "");
+  qLabel.style.marginBottom = "0";
+
+  const qTimestamp = create("span", "fs12 muted", doc.time || nowTime());
+  qLabelRow.append(qLabel, qTimestamp);
+
   const question = create("div", "cr-question fs14 p12", doc.question || "");
   const aLabel = create("div", "cr-section-label", "");
   const answer = create(
@@ -366,12 +378,30 @@ function makeCrBlock(doc, idx) {
   bLetter.style.padding = "2px 4px";
 
   bLetter.onclick = () => {
-    // Ouvrir le panneau de rédaction de courrier pour ce document
-    state.correctionMode = "letter"; // Mode spécial pour courrier
-    state.correctionInput = "";
-    state.activeCorrectionDocId = doc.id ?? idx;
-    state.selectedCrForLetter = doc;
-    window.render();
+    // Changer le dropdown Mode vers "Courrier"
+    const modeDropdown = document.querySelector(".dd.dd-mode .dd-display");
+    if (modeDropdown) {
+      modeDropdown.textContent = "Courrier";
+
+      // Masquer le dropdown IA et afficher le dropdown Lettre
+      const ddIA = document.querySelector(".dd.dd-ia");
+      const ddLetter = document.querySelector(".dd.dd-letter");
+      if (ddIA) ddIA.style.display = "none";
+      if (ddLetter) ddLetter.style.display = "flex";
+
+      // Changer le placeholder du textarea
+      const textarea = document.querySelector(".cr-textarea");
+      if (textarea) {
+        textarea.placeholder = "Rédiger un courrier a partir du Compte-rendu sélectionné";
+        textarea.focus();
+      }
+
+      // Stocker le document sélectionné pour référence
+      state.selectedCrForLetter = doc;
+
+      // Scroll vers le bas
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
   };
 
   const bCopy = create("button", "btn btn-icon fs12");
@@ -417,22 +447,22 @@ function makeCrBlock(doc, idx) {
     answer.append(actions);
   }
 
-  content.append(qLabel, question, header, aLabel, answer);
+  content.append(qLabelRow, question, header, aLabel, answer);
 
   // Ajouter les cartes additionnelles (corrections, courriers) si elles existent
   if (Array.isArray(doc.cards) && doc.cards.length > 0) {
-    // Trouver l'index de la dernière carte correction-response
-    let lastCorrectionResponseIndex = -1;
+    // Trouver l'index de la dernière carte de type réponse (correction-response ou letter-response)
+    let lastResponseIndex = -1;
     for (let i = doc.cards.length - 1; i >= 0; i--) {
-      if (doc.cards[i].type === "correction-response") {
-        lastCorrectionResponseIndex = i;
+      if (doc.cards[i].type === "correction-response" || doc.cards[i].type === "letter-response") {
+        lastResponseIndex = i;
         break;
       }
     }
 
     doc.cards.forEach((card, index) => {
-      const isLastCorrectionResponse = index === lastCorrectionResponseIndex && lastCorrectionResponseIndex !== -1;
-      const cardEl = makeAdditionalCard(card, doc, isLastCorrectionResponse, isLastCorrectionResponse ? actions : null);
+      const isLastResponse = index === lastResponseIndex && lastResponseIndex !== -1;
+      const cardEl = makeAdditionalCard(card, doc, isLastResponse, isLastResponse && card.type === "correction-response" ? actions : null);
       content.append(cardEl);
     });
   }
@@ -603,14 +633,13 @@ export function renderReportTab() {
     form.append(actions);
     wrap.append(form);
   } else {
-    // Panneau correction/courrier
-    const isLetterMode = state.correctionMode === "letter";
+    // Panneau correction uniquement
     const panel = create("div", "p12 correction-panel");
     const header = create("div", "correction-header mb12 fs20 w100");
     const title = create(
       "label",
       "fs14 bold",
-      isLetterMode ? "Rédiger un courrier" : "Qu'aimeriez-vous corriger ?"
+      "Qu'aimeriez-vous corriger ?"
     );
     const close = create("button", "btn-icon fs18 muted close", "×");
     close.onclick = () => {
@@ -622,28 +651,9 @@ export function renderReportTab() {
     header.append(title, close);
     panel.append(header);
 
-    // Dropdown pour le type de destinataire si c'est un courrier
-    if (isLetterMode) {
-      const recipientRow = create("div", "mb8");
-      const recipientLabel = create("label", "fs12 bold mb6", "Destinataire :");
-      recipientLabel.style.display = "block";
-      const recipientSelect = create("select", "select w100 p8");
-      recipientSelect.innerHTML = `
-        <option value="confrere" ${state.letterRecipient === "confrere" ? "selected" : ""}>Confrère</option>
-        <option value="patient" ${state.letterRecipient === "patient" ? "selected" : ""}>Patient</option>
-      `;
-      recipientSelect.onchange = (e) => {
-        state.letterRecipient = e.target.value;
-      };
-      recipientRow.append(recipientLabel, recipientSelect);
-      panel.append(recipientRow);
-    }
-
     const row = create("div", "cr-top-row mn8");
     const textarea = create("textarea", " correction-textarea");
-    textarea.placeholder = isLetterMode
-      ? "Instructions pour le courrier..."
-      : "Décrivez votre correction...";
+    textarea.placeholder = "Décrivez votre correction...";
     textarea.value = state.correctionInput;
     textarea.oninput = (e) => (state.correctionInput = e.target.value);
 
@@ -667,34 +677,18 @@ export function renderReportTab() {
         targetDoc.cards = [];
       }
 
-      if (isLetterMode) {
-        // Ajouter la demande de courrier
-        targetDoc.cards.push({
-          type: "letter-request",
-          content: state.correctionInput,
-          time: nowTime(),
-        });
-        // Ajouter la réponse courrier (simulée)
-        targetDoc.cards.push({
-          type: "letter-response",
-          content: `Cher ${state.letterRecipient === "patient" ? "patient" : "confrère"},\n\n${state.correctionInput}\n\nCordialement,`,
-          time: nowTime(),
-          letterRecipient: state.letterRecipient,
-        });
-      } else {
-        // Ajouter la demande de correction
-        targetDoc.cards.push({
-          type: "correction-request",
-          content: state.correctionInput,
-          time: nowTime(),
-        });
-        // Ajouter la réponse correction (simulée)
-        targetDoc.cards.push({
-          type: "correction-response",
-          content: `${targetDoc.content}\n\nCorrection appliquée : ${state.correctionInput}`,
-          time: nowTime(),
-        });
-      }
+      // Ajouter la demande de correction
+      targetDoc.cards.push({
+        type: "correction-request",
+        content: state.correctionInput,
+        time: nowTime(),
+      });
+      // Ajouter la réponse correction (simulée)
+      targetDoc.cards.push({
+        type: "correction-response",
+        content: `${targetDoc.content}\n\nCorrection appliquée : ${state.correctionInput}`,
+        time: nowTime(),
+      });
 
       // Fermer le panneau
       state.correctionMode = false;
